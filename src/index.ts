@@ -1,3 +1,7 @@
 import { server } from "./api";
 
-server.listen(3000);
+const port = 3001;
+
+server.listen(port, function(){
+    console.log(`listening on ${port}`)
+});

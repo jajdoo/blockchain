@@ -57,7 +57,7 @@ class Blockchain {
         return hash.toString();
     }
 
-    public proofOfWork(previousBlockHash: string, currentBlockData: ITransaction[]) {
+    public proofOfWork(previousBlockHash: string, currentBlockData: ITransaction[]): {nonce: number, hash: string} {
         let nonce = -1;
         let hash: string = "";
         do {
@@ -65,7 +65,7 @@ class Blockchain {
             hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
         } 
         while (hash.substring(0, 4) !== "0000");
-        return nonce;
+        return {nonce, hash};
     }
 }
 
