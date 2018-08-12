@@ -1,7 +1,11 @@
-import { server } from "./api";
+import { getServer } from "./networkNode";
 
-const port = 3001;
+const port = parseInt(process.argv[2]);
+const thisUrl = process.argv[3];
 
-server.listen(port, function(){
+const server = getServer(thisUrl);
+
+server.listen(port, function () {
     console.log(`listening on ${port}`)
 });
+

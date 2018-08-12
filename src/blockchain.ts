@@ -18,8 +18,10 @@ interface ITransaction {
 class Blockchain {
     chain: IBlock[] = [];
     pendingTransactions: ITransaction[] = [];
+    networkNodes: string[] = [];
 
-    constructor() {
+
+    constructor(private currentNodeUrl: string) {
         this.createNewBlock(100, "0", "0")
     }
 
