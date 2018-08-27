@@ -1,4 +1,5 @@
 import { SHA256 } from "crypto-js";
+import { NetworkNodeProxy } from "./network-node-proxy";
 
 interface IBlock {
     index: number;
@@ -18,11 +19,30 @@ interface ITransaction {
 class Blockchain {
     chain: IBlock[] = [];
     pendingTransactions: ITransaction[] = [];
-    networkNodes: string[] = [];
+    networkNodeProxies: NetworkNodeProxy[] = [];
 
+    constructor(private _currentNodeUrl: string) {
+        this.createNewBlock(100, "0", "0");
+    }
 
-    constructor(private currentNodeUrl: string) {
-        this.createNewBlock(100, "0", "0")
+    public async registerNode(newNodeUrl: string): Promise<void> {
+        const proxy = this.registerAndgetNodeProxy(newNodeUrl);
+        await this.broadcastNode(newNodeUrl);
+        await proxy.registerNodesBulk(this.networkNodeProxies.map(p => p.baseUrl));
+    }
+
+    private registerAndgetNodeProxy(newNodeUrl: string): NetworkNodeProxy {
+        let proxy = this.networkNodeProxies.find(p => p.baseUrl === newNodeUrl);
+        if (!proxy) {
+            proxy = new NetworkNodeProxy(newNodeUrl);
+            this.networkNodeProxies.push(proxy);
+        }
+        return proxy;
+    }
+
+    private async broadcastNode(newNodeUrl: string): Promise<void> {
+        const promises = this.networkNodeProxies.map(proxy => proxy.registerNode(newNodeUrl));
+        await Promise.all(promises);
     }
 
     public createNewBlock(nonce: number, previousBlockHash: string, hash: string): IBlock {
@@ -59,15 +79,15 @@ class Blockchain {
         return hash.toString();
     }
 
-    public proofOfWork(previousBlockHash: string, currentBlockData: ITransaction[]): {nonce: number, hash: string} {
+    public proofOfWork(previousBlockHash: string, currentBlockData: ITransaction[]): { nonce: number, hash: string } {
         let nonce = -1;
         let hash: string = "";
         do {
             ++nonce;
             hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
-        } 
+        }
         while (hash.substring(0, 4) !== "0000");
-        return {nonce, hash};
+        return { nonce, hash };
     }
 }
 
