@@ -7,12 +7,13 @@
     "clean": "rimraf dist",
     "build": "tsc",
     "watch:build": "tsc --watch",
-    "watch:server1": "nodemon './dist/index.js' 3001 http://localhost:3001 --watch dist",
-    "watch:server2": "nodemon './dist/index.js' 3002 http://localhost:3002 --watch dist",
-    "watch:server3": "nodemon './dist/index.js' 3003 http://localhost:3003 --watch dist",
-    "watch:server4": "nodemon './dist/index.js' 3004 http://localhost:3004 --watch dist",
-    "watch:server5": "nodemon './dist/index.js' 3005 http://localhost:3005 --watch dist",
-    "start": "npm-run-all clean build --parallel watch:build watch:server1 watch:server2 watch:server3 watch:server4 watch:server5 --print-label"
+    "watch:server1": "nodemon './dist/index.js' 3001 http://localhost:3001 --watch dist --inspect",
+    "watch:server2": "nodemon './dist/index.js' 3002 http://localhost:3002 --watch dist --inspect",
+    "watch:server3": "nodemon './dist/index.js' 3003 http://localhost:3003 --watch dist --inspect",
+    "watch:server4": "nodemon './dist/index.js' 3004 http://localhost:3004 --watch dist --inspect",
+    "watch:server5": "nodemon './dist/index.js' 3005 http://localhost:3005 --watch dist --inspect",
+    "start": "npm-run-all clean build --parallel watch:build watch:server1 watch:server2 watch:server3 watch:server4 watch:server5 --print-label",
+    "test": "node ./dist/test.js"
   },
   "author": "",
   "license": "ISC",
@@ -21,6 +22,7 @@
     "body-parser": "^1.18.3",
     "crypto-js": "^3.1.9-1",
     "express": "^4.16.3",
+    "express-async-errors": "^3.0.0",
     "superagent": "^3.8.3",
     "typescript": "^3.0.1",
     "uuid": "^3.3.2"

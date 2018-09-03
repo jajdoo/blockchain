@@ -1,5 +1,6 @@
 import { endpoints } from "./network-node-server";
-import request, { SuperAgentRequest } from "superagent";
+import request from "superagent";
+import { ITransaction } from "./blockchain";
 
 export class NetworkNodeProxy {
     get baseUrl(): string {
@@ -10,13 +11,20 @@ export class NetworkNodeProxy {
     }
 
     public async getBlockchain(): Promise<void> {
-        // endpoints.blockchainEndpoint
+        // endpoints.blockchainEndpoint 
         throw Error("not implemented");
     }
 
-    public async postTransaction(): Promise<void> {
-        // endpoints.TransactionEndpoint
-        throw Error("not implemented");
+    public async postTransaction(transaction: ITransaction): Promise<void> {
+        try {
+            await request
+                .post(`${this.baseUrl}${endpoints.TransactionEndpoint}`)
+                .type("json")
+                .send(transaction);
+        }
+        catch (e) {
+            console.log(`failed postTransaction to ${this.baseUrl}. error: ${e}`);
+        }
     }
 
     public async mine(): Promise<void> {
@@ -30,17 +38,26 @@ export class NetworkNodeProxy {
     }
 
     public async registerNode(newNodeUrl: string): Promise<void> {
-        request
-        .post(`${this.registerNode}/${endpoints.registerNodeEndpoint}`)
-        .type("json")
-        .send({ newNodeUrl });
+        try {
+            await request
+                .post(`${this.baseUrl}${endpoints.registerNodeEndpoint}`)
+                .type("json")
+                .send({ newNodeUrl });
+        }
+        catch (e) {
+            console.log(`failed registerNode to ${this.baseUrl}. error: ${e}`);
+        }
     }
 
-    public async registerNodesBulk(networkNodesUrls: string[]): Promise<void> {
-        const allNetworkNodes = [...networkNodesUrls, this.baseUrl];
-        const response = await request
-        .post(`${this.baseUrl}/${endpoints.registerNodesBulkEndpoint}`)
-        .type("json")
-        .send({ allNetworkNodes });
+    public async registerNodesBulk(allNetworkNodes: string[]): Promise<void> {
+        try {
+            await request
+                .post(`${this.baseUrl}${endpoints.registerNodesBulkEndpoint}`)
+                .type("json")
+                .send({ allNetworkNodes });
+        }
+        catch (e) {
+            console.log(`failed registerNodesBulk to ${this.baseUrl}. error: ${e}`);
+        }
     }
 }

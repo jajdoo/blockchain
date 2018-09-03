@@ -1,5 +1,6 @@
 import { SHA256 } from "crypto-js";
 import { NetworkNodeProxy } from "./network-node-proxy";
+import { v4 as uuid } from 'uuid';
 
 interface IBlock {
     index: number;
@@ -11,66 +12,98 @@ interface IBlock {
 }
 
 interface ITransaction {
+    transactionId: string;
+    amount: number;
+    sender: string;
+    recipient: string;
+}
+
+interface ITransaction {
+    transactionId: string;
     amount: number;
     sender: string;
     recipient: string;
 }
 
 class Blockchain {
-    chain: IBlock[] = [];
-    pendingTransactions: ITransaction[] = [];
-    networkNodeProxies: NetworkNodeProxy[] = [];
+    private _chain: IBlock[] = [];
+    private _pendingTransactions: ITransaction[] = [];
+    private _networkNodeProxies: NetworkNodeProxy[] = [];
+
+    get pendingTransactions() {
+        return { ...this._pendingTransactions };
+    }
 
     constructor(private _currentNodeUrl: string) {
         this.createNewBlock(100, "0", "0");
     }
 
-    public async registerNode(newNodeUrl: string): Promise<void> {
-        const proxy = this.registerAndgetNodeProxy(newNodeUrl);
+    public async registerAndBroadcastNode(newNodeUrl: string): Promise<void> {
+        const proxy = this.registerAndGetNodeProxy(newNodeUrl);
+        if (!proxy)
+            throw "failed to register";
+
         await this.broadcastNode(newNodeUrl);
-        await proxy.registerNodesBulk(this.networkNodeProxies.map(p => p.baseUrl));
+        await proxy.registerNodesBulk([this._currentNodeUrl, ...this._networkNodeProxies.map(p => p.baseUrl)]);
     }
 
-    private registerAndgetNodeProxy(newNodeUrl: string): NetworkNodeProxy {
-        let proxy = this.networkNodeProxies.find(p => p.baseUrl === newNodeUrl);
-        if (!proxy) {
+    public async registerNode(newNodeUrl: string): Promise<void> {
+        this.registerAndGetNodeProxy(newNodeUrl);
+    }
+
+    public createNewBlock(nonce: number, previousBlockHash: string, hash: string): IBlock {
+        const newBlock: IBlock = {
+            index: this._chain.length + 1,
+            timestamp: new Date(),
+            transactions: this._pendingTransactions,
+            nonce,
+            hash,
+            previousBlockHash
+        }
+        this._pendingTransactions = [];
+        this._chain.push(newBlock);
+        return newBlock;
+    }
+
+    public getLastBlock(): IBlock {
+        return this._chain[this._chain.length - 1];
+    }
+
+    public createNewTransaction(amount: number, sender: string, recipient: string): ITransaction {
+        return {
+            transactionId: uuid().split("-").join(""),
+            amount,
+            sender,
+            recipient
+        }
+    }
+
+    public addTransaction(transaction: ITransaction): number {
+        this._pendingTransactions.push(transaction);
+        return this.getLastBlock().index + 1;
+    }
+
+    public async broadcastTransaction(transaction: ITransaction): Promise<void> {
+        const promises = this._networkNodeProxies
+            .map(proxy => proxy.postTransaction(transaction));
+        await Promise.all(promises);
+    }
+
+    private registerAndGetNodeProxy(newNodeUrl: string): NetworkNodeProxy | undefined {
+        let proxy = this._networkNodeProxies.find(p => p.baseUrl === newNodeUrl);
+        if (!proxy && this._currentNodeUrl !== newNodeUrl) {
             proxy = new NetworkNodeProxy(newNodeUrl);
-            this.networkNodeProxies.push(proxy);
+            this._networkNodeProxies.push(proxy);
         }
         return proxy;
     }
 
     private async broadcastNode(newNodeUrl: string): Promise<void> {
-        const promises = this.networkNodeProxies.map(proxy => proxy.registerNode(newNodeUrl));
+        const promises = this._networkNodeProxies
+            .filter(proxy => proxy.baseUrl !== newNodeUrl)
+            .map(proxy => proxy.registerNode(newNodeUrl));
+
         await Promise.all(promises);
-    }
-
-    public createNewBlock(nonce: number, previousBlockHash: string, hash: string): IBlock {
-        const newBlock: IBlock = {
-            index: this.chain.length + 1,
-            timestamp: new Date(),
-            transactions: this.pendingTransactions,
-            nonce,
-            hash,
-            previousBlockHash
-        }
-        this.pendingTransactions = [];
-        this.chain.push(newBlock);
-        return newBlock;
-    }
-
-    public getLastBlock(): IBlock {
-        return this.chain[this.chain.length - 1];
-    }
-
-    public createNewTransaction(amount: number, sender: string, recipient: string): number {
-        const newTransaction: ITransaction = {
-            amount,
-            sender,
-            recipient
-        }
-        this.pendingTransactions.push(newTransaction);
-        return this.getLastBlock().index + 1;
     }
 
     private hashBlock(previousBlockHash: string, currentBlockData: ITransaction[], nonce: number): string {
