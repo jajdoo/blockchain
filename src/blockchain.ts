@@ -1,5 +1,5 @@
 import { SHA256 } from "crypto-js";
-import { NetworkNodeProxy } from "./network-node-proxy";
+import { NetworkNodeClient } from "./network-node-client";
 import { v4 as uuid } from 'uuid';
 
 interface IBlock {
@@ -28,7 +28,7 @@ interface ITransaction {
 class Blockchain {
     private _chain: IBlock[] = [];
     private _pendingTransactions: ITransaction[] = [];
-    private _networkNodeProxies: NetworkNodeProxy[] = [];
+    private _networkNodeClients: NetworkNodeClient[] = [];
 
     get pendingTransactions() {
         return { ...this._pendingTransactions };
@@ -56,7 +56,7 @@ class Blockchain {
             throw "failed to register";
 
         await this.broadcastNode(newNodeUrl);
-        await proxy.registerNodesBulk([this._currentNodeUrl, ...this._networkNodeProxies.map(p => p.baseUrl)]);
+        await proxy.registerNodesBulk([this._currentNodeUrl, ...this._networkNodeClients.map(p => p.baseUrl)]);
     }
 
     public async registerNode(newNodeUrl: string): Promise<void> {
@@ -78,7 +78,7 @@ class Blockchain {
     }
 
     public async broadcastBlock(block: IBlock): Promise<void> {
-        const promises = this._networkNodeProxies
+        const promises = this._networkNodeClients
             .map(proxy => proxy.receiveNewBlock(block));
         await Promise.all(promises);
     }
@@ -102,22 +102,22 @@ class Blockchain {
     }
 
     public async broadcastTransaction(transaction: ITransaction): Promise<void> {
-        const promises = this._networkNodeProxies
+        const promises = this._networkNodeClients
             .map(proxy => proxy.postTransaction(transaction));
         await Promise.all(promises);
     }
 
-    private registerAndGetNodeProxy(newNodeUrl: string): NetworkNodeProxy | undefined {
-        let proxy = this._networkNodeProxies.find(p => p.baseUrl === newNodeUrl);
+    private registerAndGetNodeProxy(newNodeUrl: string): NetworkNodeClient | undefined {
+        let proxy = this._networkNodeClients.find(p => p.baseUrl === newNodeUrl);
         if (!proxy && this._currentNodeUrl !== newNodeUrl) {
-            proxy = new NetworkNodeProxy(newNodeUrl);
-            this._networkNodeProxies.push(proxy);
+            proxy = new NetworkNodeClient(newNodeUrl);
+            this._networkNodeClients.push(proxy);
         }
         return proxy;
     }
 
     private async broadcastNode(newNodeUrl: string): Promise<void> {
-        const promises = this._networkNodeProxies
+        const promises = this._networkNodeClients
             .filter(proxy => proxy.baseUrl !== newNodeUrl)
             .map(proxy => proxy.registerNode(newNodeUrl));
 

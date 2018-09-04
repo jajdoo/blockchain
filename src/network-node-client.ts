@@ -2,7 +2,7 @@ import { endpoints } from "./network-node-server";
 import request from "superagent";
 import { ITransaction, IBlock } from "./blockchain";
 
-export class NetworkNodeProxy {
+export class NetworkNodeClient {
     get baseUrl(): string {
         return this._baseUrl;
     }
