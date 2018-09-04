@@ -1,6 +1,6 @@
 import { endpoints } from "./network-node-server";
 import request from "superagent";
-import { ITransaction } from "./blockchain";
+import { ITransaction, IBlock } from "./blockchain";
 
 export class NetworkNodeProxy {
     get baseUrl(): string {
@@ -8,11 +8,6 @@ export class NetworkNodeProxy {
     }
 
     public constructor(private _baseUrl: string) {
-    }
-
-    public async getBlockchain(): Promise<void> {
-        // endpoints.blockchainEndpoint 
-        throw Error("not implemented");
     }
 
     public async postTransaction(transaction: ITransaction): Promise<void> {
@@ -25,16 +20,6 @@ export class NetworkNodeProxy {
         catch (e) {
             console.log(`failed postTransaction to ${this.baseUrl}. error: ${e}`);
         }
-    }
-
-    public async mine(): Promise<void> {
-        // endpoints.mineEndpoint
-        throw Error("not implemented");
-    }
-
-    public async registerAndBroadcastNode(): Promise<void> {
-        // endpoints.registerAndBroadcastNodeEndpoint
-        throw Error("not implemented");
     }
 
     public async registerNode(newNodeUrl: string): Promise<void> {
@@ -58,6 +43,18 @@ export class NetworkNodeProxy {
         }
         catch (e) {
             console.log(`failed registerNodesBulk to ${this.baseUrl}. error: ${e}`);
+        }
+    }
+
+    public async receiveNewBlock(block: IBlock): Promise<void> {
+        try {
+            await request
+                .post(`${this.baseUrl}${endpoints.receiveNewBlockEndpoint}`)
+                .type("json")
+                .send(block);
+        }
+        catch (e) {
+            console.log(`failed receiveNewBlock to ${this.baseUrl}. error: ${e}`);
         }
     }
 }

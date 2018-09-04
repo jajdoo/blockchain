@@ -38,6 +38,18 @@ class Blockchain {
         this.createNewBlock(100, "0", "0");
     }
 
+    public tryAddBlock(newBlock: IBlock): boolean {
+        const lastBlock = this.getLastBlock();
+        const hashOk = newBlock.previousBlockHash === lastBlock.hash;
+        const indexOk = lastBlock.index + 1 === newBlock.index;
+        if (hashOk && indexOk) {
+            this._chain.push(newBlock);
+            this._pendingTransactions = [];
+            return true;
+        }
+        return false;
+    }
+
     public async registerAndBroadcastNode(newNodeUrl: string): Promise<void> {
         const proxy = this.registerAndGetNodeProxy(newNodeUrl);
         if (!proxy)
@@ -63,6 +75,12 @@ class Blockchain {
         this._pendingTransactions = [];
         this._chain.push(newBlock);
         return newBlock;
+    }
+
+    public async broadcastBlock(block: IBlock): Promise<void> {
+        const promises = this._networkNodeProxies
+            .map(proxy => proxy.receiveNewBlock(block));
+        await Promise.all(promises);
     }
 
     public getLastBlock(): IBlock {

@@ -13,14 +13,30 @@ const servers = [
 
 async function test() {
     await registerServer(servers[0], servers[1]);
-    await registerServer(servers[0], servers[2]);
+    await registerServer(servers[1], servers[2]);
     await registerServer(servers[0], servers[3]);
-    await registerServer(servers[0], servers[4]);
+    await registerServer(servers[2], servers[4]);
     await tx(servers[0], { amount: 1, recipient: "gal", sender: "nir" });
-    await tx(servers[2], { amount: 454, recipient: "omer", sender: "nir" });
+    await tx(servers[0], { amount: 454, recipient: "omer", sender: "nir" });
+    await mine(servers[0]);
 }
 
 test();
+
+async function mine(serverUrl: string) {
+    try {
+        console.log(`mining @ ${serverUrl}`)
+        const response = await request
+            .post(`${serverUrl}${endpoints.mineEndpoint}`)
+            .type("json")
+            .send(tx);
+
+        console.log(JSON.stringify(response.body));
+    } catch (e) {
+        console.log(`mine failed ${e}`);
+        throw e;
+    }
+}
 
 async function tx(serverUrl: string, tx: ITransactionCreateRequest) {
     try {
