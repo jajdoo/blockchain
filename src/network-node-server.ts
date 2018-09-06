@@ -21,7 +21,8 @@ const endpoints = {
     receiveNewBlockEndpoint: "/receive-new-block",
     registerAndBroadcastNodeEndpoint: "/register-and-broadcast-node",
     registerNodeEndpoint: "/register-node",
-    registerNodesBulkEndpoint: "/register-nodes-bulk"
+    registerNodesBulkEndpoint: "/register-nodes-bulk",
+    concensusEndpoint: "/concensus"
 };
 
 function getNetworkNodeServer(currentNodeUrl: string): Express {
@@ -98,6 +99,11 @@ function getNetworkNodeServer(currentNodeUrl: string): Express {
         console.log(`${endpoints.registerNodesBulkEndpoint} -> allNetworkNodes [${allNetworkNodes}]`);
         controller.registerNodesBulk(allNetworkNodes);
         res.json({ note: "bulk registeration successful." });
+    });
+
+    server.get(endpoints.concensusEndpoint, (req: Request, res: Response) => { 
+        console.log(`${endpoints.concensusEndpoint}`);
+        controller.concensus();
     });
 
     return server;

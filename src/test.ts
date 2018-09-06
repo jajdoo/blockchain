@@ -19,6 +19,8 @@ async function test() {
     await tx(servers[0], { amount: 1, recipient: "gal", sender: "nir" });
     await tx(servers[0], { amount: 454, recipient: "omer", sender: "nir" });
     await mine(servers[0]);
+    await tx(servers[0], { amount: 2000, recipient: "nir", sender: "nir" });
+    await mine(servers[1]);
 }
 
 test();

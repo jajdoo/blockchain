@@ -1,6 +1,8 @@
 import { SHA256 } from "crypto-js";
-import { NetworkNodeClient } from "./network-node-client";
 import { v4 as uuid } from 'uuid';
+import deepEqual from "deep-equal";
+
+import { NetworkNodeClient } from "./network-node-client";
 
 interface IBlock {
     index: number;
@@ -18,19 +20,16 @@ interface ITransaction {
     recipient: string;
 }
 
-interface ITransaction {
-    transactionId: string;
-    amount: number;
-    sender: string;
-    recipient: string;
-}
-
 class Blockchain {
     private _chain: IBlock[] = [];
     private _pendingTransactions: ITransaction[] = [];
     private _networkNodeClients: NetworkNodeClient[] = [];
 
-    get pendingTransactions() {
+    get chain(): IBlock[] {
+        return { ...this._chain };
+    }
+
+    get pendingTransactions(): ITransaction[] {
         return { ...this._pendingTransactions };
     }
 
@@ -137,8 +136,39 @@ class Blockchain {
             ++nonce;
             hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
         }
-        while (hash.substring(0, 4) !== "0000");
+        while (!this.hashIsCorrect(hash));
         return { nonce, hash };
+    }
+
+    private hashIsCorrect(hash: string) {
+        return (hash.substring(0, 4) === "0000");
+    }
+
+    concensus(): void {
+        this._networkNodeClients.map(c => c.get)
+    }
+
+    public chainIsValid(blockchain: IBlock[]): boolean {
+
+        if (!this.genesisBlockConsistent(blockchain) || blockchain.length !== this._chain.length)
+            return false;
+
+        for (let i = 1; i < blockchain.length; ++i)
+            if (!this.blocksHashConsistent(blockchain[i - 1], blockchain[i]))
+                return false;
+
+        return true;
+    }
+
+    private blocksHashConsistent(prevBlock: IBlock, currentBlock: IBlock): boolean {
+        const recalculatedHash = this.hashBlock(prevBlock.hash, currentBlock.transactions, currentBlock.nonce);
+        const recalculatedHashOk = this.hashIsCorrect(recalculatedHash);
+        const hashInfoOk = currentBlock.previousBlockHash !== prevBlock.hash;
+        return recalculatedHashOk && hashInfoOk;
+    }
+
+    private genesisBlockConsistent(blockchain: IBlock[]): boolean {
+        return deepEqual(this._chain[0], blockchain[0]);
     }
 }
 

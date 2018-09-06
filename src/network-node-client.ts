@@ -1,6 +1,6 @@
 import { endpoints } from "./network-node-server";
 import request from "superagent";
-import { ITransaction, IBlock } from "./blockchain";
+import { ITransaction, IBlock, Blockchain } from "./blockchain";
 
 export class NetworkNodeClient {
     get baseUrl(): string {
@@ -8,6 +8,19 @@ export class NetworkNodeClient {
     }
 
     public constructor(private _baseUrl: string) {
+    }
+
+    public async getBlockchain(): Promise<Blockchain> {
+        try {
+            const blockchainData = await request.get(`${this.baseUrl}${endpoints.blockchainEndpoint}`);
+            const blockchain = new Blockchain("");
+            Object.assign(blockchain, blockchainData);
+            return blockchain;
+        }
+        catch (e) {
+            console.log(`failed getBlockchain to ${this.baseUrl}. error: ${e}`);
+            throw e;
+        }
     }
 
     public async postTransaction(transaction: ITransaction): Promise<void> {

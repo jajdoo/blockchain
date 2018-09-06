@@ -3,7 +3,6 @@ import { v4 as uuid } from 'uuid';
 import { ITransactionCreateRequest } from "./network-node-server";
 
 export class NetworkNodeController {
-
     private bitcoin: Blockchain;
     private nodeAddress: string;
 
@@ -54,5 +53,9 @@ export class NetworkNodeController {
         for (let nodeUrl of allNetworkNodes) {
             this.bitcoin.registerNode(nodeUrl);
         }
+    }
+
+    public concensus(): void {
+        this.bitcoin.concensus();
     }
 }
